@@ -1,0 +1,60 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cmake.defaultVariants": {
+			"buildType": {
+				"default": "debug",
+				"description": "The build type.",
+				"choices": {
+					"debug": {
+						"short": "Debug",
+						"long": "Disable optimizations - include debug information.",
+						"buildType": "Debug"
+					},
+					"release": {
+						"short": "Release",
+						"long": "Optimize for speed - exclude debug information.",
+						"buildType": "Release"
+					},
+					"minsize": {
+						"short": "MinSizeRel",
+						"long": "Optimize for smallest binary size - exclude debug information.",
+						"buildType": "MinSizeRel"
+					},
+					"reldeb": {
+						"short": "RelWithDebInfo",
+						"long": "Optimize for speed - include debug information.",
+						"buildType": "RelWithDebInfo"
+					}
+				}
+			}
+		},
+		"cortex-debug.armToolchainPrefix": "arm-none-eabi",
+		"cortex-debug.gdbPath": "gdb",
+		"cortex-debug.openocdPath": "/usr/local/bin/openocd",
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Cortex Debug w/ OpenOCD",
+				"cwd": "${workspaceFolder}",
+				"executable": "${workspaceFolder}/build/auto_type.elf",
+				"request": "launch",
+				"type": "cortex-debug",
+				"servertype": "openocd",
+				"device": "RP2040",
+				"configFiles": [
+					"interface/picoprobe.cfg",
+					"target/rp2040.cfg"
+				],
+				"svdFile": "${config:cmake.configureEnvironment.PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+				"runToEntrypoint": false
+			}
+		]
+	}
+}
