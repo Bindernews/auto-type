@@ -15,3 +15,7 @@
 #error "Must define only ONE (1) of CFG_BUTTON_CONTROLS or CFG_DEFAULT_CONTROLS"
 #endif
 #undef _CHECK
+
+#if !defined(CFG_LED_WHEN_PRESSED)
+#define CFG_LED_WHEN_PRESSED 0
+#endif

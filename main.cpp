@@ -111,6 +111,19 @@ static inline void pass_event(int event, int data)
     impl_event(event, data);
 }
 
+/** Toggle the built-in LED on and off \c count times, useful for debugging. */
+static void debug_led(uint count, uint timeout=150)
+{
+    #ifndef NDEBUG
+    for (uint i = 0; i < count; i++) {
+        gpio_put(25, 1);
+        sleep_ms(timeout);
+        gpio_put(25, 0);
+        sleep_ms(timeout);
+    }
+    #endif
+}
+
 int main()
 {
     int mode = 0;
@@ -176,7 +189,7 @@ bool decode_some(int count)
 
 #if defined(KEYBOARD_OUT)
 bool usb_on = false;
-absolute_time_t next_write = at_the_end_of_time;
+absolute_time_t next_write = nil_time;
 
 void task_debug_a();
 bool send_next_report();
@@ -377,6 +390,13 @@ void controls_task()
         self->pins[i] = !gpio_get(PIN_IDS[i]);
         released[i] = !self->pins[i] && self->pins_prev[i];
     }
+    #if CFG_LED_WHEN_PRESSED
+    if (self->pins[0] || self->pins[1] || self->pins[2]) {
+        gpio_put(25, 1);
+    } else {
+        gpio_put(25, 0);
+    }
+    #endif
 
     // Count our enter clicks
     if (released[PIN_IDX_ENTER]) {
@@ -394,7 +414,7 @@ void controls_task()
     s_control_state = CONTROL_NONE;
     // If we're NOT currently printing we can do all sorts of things
     if (!self->printing) {
-        #ifdef CFG_PIN_PREV_ENABLED
+        #if defined(CFG_PIN_PREV_ENABLED) || 1
         // Test if previous/down button was pressed
         if (released[PIN_IDX_PREV]) {
             s_source -= 1;
