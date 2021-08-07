@@ -7,25 +7,40 @@
 #include "decode.h"
 #include "config_check.h"
 
+/** Timeout before registering if a click was single or double in Control Mode. */
 #define DOUBLE_CLICK_TIMEOUT (500)
+/** In Default Mode, wait INITIAL_DELAY ms before starting to print data. Ignored in Control Mode. */
 #define INITIAL_DELAY (4000)
+/** Delay between keypresses in keyboard mode. Currently ignored. */
 #define KEY_PRESS_DELAY (1)
+
+/** GPIO pin number */
 #define PIN_CTRL_PREV  16
+/** GPIO pin number */
 #define PIN_CTRL_ENTER 17
+/** GPIO pin number */
 #define PIN_CTRL_NEXT  18
 #define NUM_INPUT_PINS 3
 
 enum {
+    /** No control command, carry on. */
     CONTROL_NONE  = 0,
+    /** Begin printing the currently selected source. */
     CONTROL_ENTER = 1 << 0,
+    /** Print the name of the currently selected source. */
     CONTROL_INFO  = 1 << 1,
+    /** Cancel current print. */
     CONTROL_CANCEL = 1 << 2,
 };
 
 enum {
+    /** Sent when a print begins. */
     EVENT_BEGIN =   1 << 0,
+    /** Sent after a print ends. */
     EVENT_END =     1 << 1,
+    /** Sent after the user has requested the source name. */
     EVENT_INFO =    1 << 2,
+    /** Sent after a print has been cancelled (also sends EVENT_END). */
     EVENT_CANCEL =  1 << 3,
 };
 
@@ -41,24 +56,13 @@ enum {
 /////////////
 // Utility //
 /////////////
-static inline bool mtest(int v, int m) { return (v & m) > 0; }
+
+/** Return true if \c v contains all of the bits of mask \c m . Short for "mask-test". */
+static inline bool mtest(int v, int m) { return (v & m) == m; }
 
 extern "C" {
 uint8_t map_key(char c);
 }
-
-//////////////
-// Controls //
-//////////////
-
-void controls_init();
-void controls_task();
-/** Callback for various events. */
-void controls_event(int event, int data);
-/** The current source index to print. */
-static int s_source;
-/** Current control state. */
-static int s_control_state;
 
 /**
  * Returns true if \c t is passed the the current time.
@@ -67,6 +71,21 @@ static inline bool is_passed_time(absolute_time_t t)
 {
     return absolute_time_diff_us(t, get_absolute_time()) >= 0;
 }
+
+//////////////
+// Controls //
+//////////////
+
+/** Called to init the controls module. */
+void controls_init();
+/** Called continuously in a loop. */
+void controls_task();
+/** Callback for various events. */
+void controls_event(int event, int data);
+/** The current source index to print. */
+static int s_source;
+/** Current control state. */
+static int s_control_state;
 
 
 //////////////////////////////
@@ -78,12 +97,11 @@ static void impl_task();
 static void impl_event(int event, int data);
 static bool impl_print(const char *message, size_t count);
 
-
 //////////
 // Main //
 //////////
 
-/** Helper function to decode and print \c count characters. */
+/** Helper function to decode and print \c count characters using \c impl_print . */
 bool decode_some(int count);
 
 /** Helper function to invoke each event callback. */
@@ -376,6 +394,7 @@ void controls_task()
     s_control_state = CONTROL_NONE;
     // If we're NOT currently printing we can do all sorts of things
     if (!self->printing) {
+        #ifdef CFG_PIN_PREV_ENABLED
         // Test if previous/down button was pressed
         if (released[PIN_IDX_PREV]) {
             s_source -= 1;
@@ -383,6 +402,7 @@ void controls_task()
                 s_source = decode_num_sources() - 1;
             }
         }
+        #endif
         // Test if next/up button was pressed
         if (released[PIN_IDX_NEXT]) {
             s_source += 1;

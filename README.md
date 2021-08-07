@@ -41,17 +41,33 @@ to the build directory.
 ```cmake
 add_data_source(
     # Path to the source file
-    INPUT ${CMAKE_CURRENT_LIST_DIR}/sources/example1.txt
-    # Path to output files (will generate example1_bin.h and example1_bin.c)
-    OUTPUT ${CMAKE_BINARY_DIR}/example1_bin
+    INPUT ${CMAKE_CURRENT_LIST_DIR}/sources/big_file.txt
+    # Path to output files (will generate big_file_bin.h and big_file_bin.c)
+    OUTPUT ${CMAKE_BINARY_DIR}/big_file_bin
     # Name of the C array (this will also #define EXAMPLE1_ARRAY_SIZE)
-    NAME EXAMPLE1_ARRAY
+    NAME BIG_FILE
     # The name of the executable target, should always be "auto_type"
     TARGETS auto_type)
 ```
 
-Once this is done edit `sources.h`. Update `SOURCES_SIZE` to the new size of the array
-and add an entry `{ <NAME>_SIZE, <NAME>, "A short description" },` where `<NAME>` is replaced
-with the NAME argument you gave in `CMakeLists.txt`. For example if in the CMake file I put
-`NAME BIG_FILE` then my `sources.h` entry might read `{ BIG_FILE_SIZE, BIG_FILE, "A really big file" },`.
+Once this is done edit `sources.h`.
 
+First add `#include "<output_name>.h"` where `<output_name>` is replaced with the file name
+portion of `OUTPUT` from the CMake file. In the above example this would be `#include "big_file_bin.h"`.
+
+Then update `SOURCES_SIZE` to the new size of the array and add an entry
+`{ <NAME>_SIZE, <NAME>, "A short description" },` where `<NAME>` is replaced with the NAME argument
+you gave in `CMakeLists.txt`. In this example the `sources.h` entry might read:
+```
+{ BIG_FILE_SIZE, BIG_FILE, "A really big file" },
+```
+Don't forget the comma at the end!.
+
+
+# Development Notes
+Most of the code is reasonably organized. The code in `main.cpp` is a bit much and if more options were added it
+could be good to split that file up. The weirdest file is probably `decode.c` which, instead of simply managing
+`mz_inflate` calls is also the file that tracks source data. When I started on this I ended up debugging it on
+my computer, and I only had one data source, so it made sense to put it all together in one file. Just call
+`decode_next_char()` until it returns -1. As things evolved that design changed but I never got around to
+refactoring it. For either future me or others reading this, that particular design could be better.
